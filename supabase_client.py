@@ -1,14 +1,29 @@
+import os
 from supabase import create_client
+import streamlit as st
 
-def get_supabase():
-    import streamlit as st
-    import os
+SUPABASE_URL = os.getenv("SUPABASE_URL") or st.secrets["SUPABASE_URL"]
+SUPABASE_KEY = os.getenv("SUPABASE_KEY") or st.secrets["SUPABASE_KEY"]
 
-    url = st.secrets.get("SUPABASE_URL", os.environ.get("SUPABASE_URL"))
-    key = st.secrets.get("SUPABASE_KEY", os.environ.get("SUPABASE_KEY"))
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    if not url or not key:
-        st.error("Supabase credentials are missing.")
-        st.stop()
+def get_teams():
+    return supabase.table("teams").select("*").execute().data
 
-    return create_client(url, key)
+def get_players(team_id=None):
+    query = supabase.table("players").select("*")
+    if team_id:
+        query = query.eq("team_id", team_id)
+    return query.execute().data
+
+def get_matches():
+    return supabase.table("matches").select("*").execute().data
+
+def add_match(match_data):
+    return supabase.table("matches").insert(match_data).execute()
+
+def add_player_match_stats(stats_data):
+    return supabase.table("player_match_stats").insert(stats_data).execute()
+
+def get_player_match_stats(player_id):
+    return supabase.table("player_match_stats").select("*").eq("player_id", player_id).execute().data
