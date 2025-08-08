@@ -67,3 +67,51 @@ st.markdown(
 
 st.sidebar.title("Valorant — Competitive Dashboard")
 st.sidebar.markdown("**Theme:** Blue • Black • Purple")
+# --- Initialize Supabase ---
+supabase = init_supabase()
+
+# --- Fetch data ---
+@st.cache_data(ttl=30)
+def fetch_teams():
+    res = supabase.table("teams").select("*").execute()
+    return res.data or []
+
+@st.cache_data(ttl=30)
+def fetch_players():
+    res = supabase.table("players").select("*").execute()
+    return res.data or []
+
+teams = fetch_teams()
+players = fetch_players()
+team_names = {t["id"]: t.get("name", "Unknown") for t in teams}
+
+# --- Dashboard Header ---
+st.markdown('<div class="big-title">Valorant Competitive Dashboard</div>', unsafe_allow_html=True)
+
+# --- Team Selector ---
+team_options = ["All Teams"] + [f'{t["name"]} ({t["id"]})' for t in teams]
+selected = st.selectbox("Select team", options=team_options)
+
+# --- Filter players ---
+if selected != "All Teams":
+    try:
+        selected_id = int(selected.split("(")[-1].replace(")", ""))
+        players = [p for p in players if p.get("team_id") == selected_id]
+    except:
+        pass
+
+# --- Display team info ---
+def render_team_card(team):
+    st.markdown(f'<div class="metric-card"><h3>{team.get("name")}</h3>', unsafe_allow_html=True)
+    logo = team.get("logo_url")
+    if logo:
+        st.image(logo, width=160)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+if selected != "All Teams":
+    t = next((x for x in teams if x["id"] == selected_id), None)
+    if t:
+        render_team_card(t)
+else:
+    for t in teams:
+        render_team_card(t)
