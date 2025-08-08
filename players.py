@@ -28,3 +28,4 @@ players = get_players(supabase)
 st.subheader("Current Players")
 for player in players:
     st.write(f"{player['name']} — {player['rank']}")
+# force reload
